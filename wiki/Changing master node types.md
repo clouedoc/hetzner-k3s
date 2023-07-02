@@ -4,32 +4,37 @@ As your project scales, you might have more and more workloads and nodes, which 
 
 This guide will help demonstrate how to vertically scale your master node.
 
+## Key points
+
+- do not attempt to rename existing nodes
+- gradually delete and replace your masters
+
 ## Choose your new node type
 
 Here are the k3s requirements:
 
 <img width="415" alt="image" src="https://github.com/vitobotta/hetzner-k3s/assets/13921610/969128ac-560f-4f8d-81d2-26a970caed61">
 
-## Steps
 
-### Scale up your masters if you only have one
+## Scale up your masters if you only have one
 
-If you only have one master, you will need to have multiple ones of them in order to avoid interrupting your cluster.
+If you only have one master, you will need to have multiple ones to follow this procedure.
 
 This can be done by changing the amount of masters in your config file, and applying it with the `create` hetzner-k3s command.
 
-You can also skip this step if you don't mind a bit of downtime.
+It is recommended to pick an uneven number of nodes.
 
-### Rescaling your masters
+## Remove all of your masters except one
 
-For each node, sequentially apply the following procedure on the Hetzner Cloud Console.
+1. Remove most of your masters on k8s
+2. Remove the corresponding nodes on Hetzner cloud
 
-1. Shut down the node.
-2. Rescale it
-3. Check that the node came back up
-4. On the Hetzner Cloud Console, change the node with the appropriate node type (don't bother editing the hostname inside k8s or inside the node)
-5. You're good to go!
-
-### Editing your configuration
+## Recreate master nodes with the new type
 
 In your configuration, edit the master node type to the new one that you choose.
+Then, apply the changes
+
+## Final touch - recreate leftover master nodes
+
+1. Delete the leftover master nodes (k8s, Hetzner Cloud Console)
+2. Reapply the configuration again, to recreate them
