@@ -1,9 +1,11 @@
 require "../client"
+
 require "./find"
 
 class Hetzner::Firewall::Create
   getter hetzner_client : Hetzner::Client
   getter firewall_name : String
+  getter private_network : String
   getter private_network_subnet : String
   getter ssh_allowed_networks : Array(String)
   getter api_allowed_networks : Array(String)
@@ -12,14 +14,15 @@ class Hetzner::Firewall::Create
   getter ssh_port : Int32
 
   def initialize(
-      @hetzner_client,
-      @firewall_name,
-      @ssh_allowed_networks,
-      @api_allowed_networks,
-      @high_availability,
-      @private_network_subnet,
-      @ssh_port
-    )
+    @hetzner_client,
+    @firewall_name,
+    @ssh_allowed_networks,
+    @api_allowed_networks,
+    @high_availability,
+    @private_network,
+    @private_network_subnet,
+    @ssh_port
+  )
     @firewall_finder = Hetzner::Firewall::Find.new(hetzner_client, firewall_name)
   end
 
@@ -50,59 +53,59 @@ class Hetzner::Firewall::Create
   private def firewall_config
     rules = [
       {
-        description: "Allow SSH port",
-        direction: "in",
-        protocol: "tcp",
-        port: ssh_port.to_s,
-        source_ips: ssh_allowed_networks,
-        destination_ips: [] of String
+        description:     "Allow SSH port",
+        direction:       "in",
+        protocol:        "tcp",
+        port:            ssh_port.to_s,
+        source_ips:      ssh_allowed_networks,
+        destination_ips: [] of String,
       },
       {
         description: "Allow ICMP (ping)",
-        direction: "in",
-        protocol: "icmp",
-        source_ips: [
+        direction:   "in",
+        protocol:    "icmp",
+        source_ips:  [
           "0.0.0.0/0",
-          "::/0"
+          "::/0",
         ],
-        destination_ips: [] of String
+        destination_ips: [] of String,
       },
       {
         description: "Allow all TCP traffic between nodes on the private network",
-        direction: "in",
-        protocol: "tcp",
-        port: "any",
-        source_ips: [
-          private_network_subnet
+        direction:   "in",
+        protocol:    "tcp",
+        port:        "any",
+        source_ips:  [
+          private_network,
         ],
-        destination_ips: [] of String
+        destination_ips: [] of String,
       },
       {
         description: "Allow all UDP traffic between nodes on the private network",
-        direction: "in",
-        protocol: "udp",
-        port: "any",
-        source_ips: [
-          private_network_subnet
+        direction:   "in",
+        protocol:    "udp",
+        port:        "any",
+        source_ips:  [
+          private_network,
         ],
-        destination_ips: [] of String
-      }
+        destination_ips: [] of String,
+      },
     ]
 
     unless high_availability
       rules << {
-        description: "Allow port 6443 (Kubernetes API server)",
-        direction: "in",
-        protocol: "tcp",
-        port: "6443",
-        source_ips: api_allowed_networks,
-        destination_ips: [] of String
+        description:     "Allow port 6443 (Kubernetes API server)",
+        direction:       "in",
+        protocol:        "tcp",
+        port:            "6443",
+        source_ips:      api_allowed_networks,
+        destination_ips: [] of String,
       }
     end
 
     {
-      name: firewall_name,
-      rules: rules
+      name:  firewall_name,
+      rules: rules,
     }
   end
 end

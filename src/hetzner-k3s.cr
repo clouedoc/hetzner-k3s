@@ -14,10 +14,10 @@ module Hetzner::K3s
       define_help description: "create - Create a cluster"
 
       define_flag configuration_file_path : String,
-                  description: "The path of the YAML configuration file",
-                  long: "config",
-                  short: "c",
-                  required: true
+        description: "The path of the YAML configuration file",
+        long: "config",
+        short: "c",
+        required: true
 
       def run
         configuration = Configuration::Loader.new(flags.configuration_file_path, nil)
@@ -31,10 +31,10 @@ module Hetzner::K3s
       define_help description: "delete - Delete a cluster"
 
       define_flag configuration_file_path : String,
-                  description: "The path of the YAML configuration file",
-                  long: "config",
-                  short: "c",
-                  required: true
+        description: "The path of the YAML configuration file",
+        long: "config",
+        short: "c",
+        required: true
 
       def run
         configuration = Configuration::Loader.new(flags.configuration_file_path, nil)
@@ -48,15 +48,15 @@ module Hetzner::K3s
       define_help description: "upgrade - Upgrade a cluster to a newer version of k3s"
 
       define_flag configuration_file_path : String,
-                  description: "The path of the YAML configuration file",
-                  long: "config",
-                  short: "c",
-                  required: true
+        description: "The path of the YAML configuration file",
+        long: "config",
+        short: "c",
+        required: true
 
       define_flag new_k3s_version : String,
-                  description: "The new version of k3s to upgrade to",
-                  long: "--new-k3s-version",
-                  required: true
+        description: "The new version of k3s to upgrade to",
+        long: "--new-k3s-version",
+        required: true
 
       def run
         configuration = Configuration::Loader.new(flags.configuration_file_path, flags.new_k3s_version)

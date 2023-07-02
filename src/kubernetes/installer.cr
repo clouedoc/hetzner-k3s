@@ -9,10 +9,10 @@ require "../configuration/loader"
 require "file_utils"
 
 class Kubernetes::Installer
-  MASTER_INSTALL_SCRIPT = {{ read_file("#{__DIR__}/../../templates/master_install_script.sh") }}
-  WORKER_INSTALL_SCRIPT = {{ read_file("#{__DIR__}/../../templates/worker_install_script.sh") }}
+  MASTER_INSTALL_SCRIPT         = {{ read_file("#{__DIR__}/../../templates/master_install_script.sh") }}
+  WORKER_INSTALL_SCRIPT         = {{ read_file("#{__DIR__}/../../templates/worker_install_script.sh") }}
   HETZNER_CLOUD_SECRET_MANIFEST = {{ read_file("#{__DIR__}/../../templates/hetzner_cloud_secret_manifest.yaml") }}
-  CLUSTER_AUTOSCALER_MANIFEST = {{ read_file("#{__DIR__}/../../templates/cluster_autoscaler.yaml") }}
+  CLUSTER_AUTOSCALER_MANIFEST   = {{ read_file("#{__DIR__}/../../templates/cluster_autoscaler.yaml") }}
 
   getter configuration : Configuration::Loader
   getter settings : Configuration::Main { configuration.settings }
@@ -124,26 +124,26 @@ class Kubernetes::Installer
     taint = settings.schedule_workloads_on_masters ? " " : " --node-taint CriticalAddonsOnly=true:NoExecute "
 
     Crinja.render(MASTER_INSTALL_SCRIPT, {
-      cluster_name: settings.cluster_name,
-      k3s_version: settings.k3s_version,
-      k3s_token: k3s_token,
-      disable_flannel: settings.disable_flannel.to_s,
-      flannel_backend: flannel_backend,
-      taint: taint,
-      extra_args: extra_args,
-      server: server,
-      tls_sans: tls_sans,
-      private_network_test_ip: settings.private_network_subnet.split(".")[0..2].join(".") + ".1"
+      cluster_name:            settings.cluster_name,
+      k3s_version:             settings.k3s_version,
+      k3s_token:               k3s_token,
+      disable_flannel:         settings.disable_flannel.to_s,
+      flannel_backend:         flannel_backend,
+      taint:                   taint,
+      extra_args:              extra_args,
+      server:                  server,
+      tls_sans:                tls_sans,
+      private_network_test_ip: settings.private_network_subnet.split(".")[0..2].join(".") + ".1",
     })
   end
 
   private def worker_install_script
     Crinja.render(WORKER_INSTALL_SCRIPT, {
-      cluster_name: settings.cluster_name,
-      k3s_token: k3s_token,
-      k3s_version: settings.k3s_version,
+      cluster_name:                    settings.cluster_name,
+      k3s_token:                       k3s_token,
+      k3s_version:                     settings.k3s_version,
       first_master_private_ip_address: first_master.private_ip_address,
-      private_network_test_ip: settings.private_network_subnet.split(".")[0..2].join(".") + ".1"
+      private_network_test_ip:         settings.private_network_subnet.split(".")[0..2].join(".") + ".1",
     })
   end
 
@@ -200,9 +200,9 @@ class Kubernetes::Installer
 
     puts "Saving the kubeconfig file to #{kubeconfig_path}..."
 
-    kubeconfig = ssh.run(first_master, settings.ssh_port, "cat /etc/rancher/k3s/k3s.yaml", settings.use_ssh_agent, print_output: false).
-      gsub("127.0.0.1", api_server_ip_address).
-      gsub("default", settings.cluster_name)
+    kubeconfig = ssh.run(first_master, settings.ssh_port, "cat /etc/rancher/k3s/k3s.yaml", settings.use_ssh_agent, print_output: false)
+      .gsub("127.0.0.1", api_server_ip_address)
+      .gsub("default", settings.cluster_name)
 
     File.write(kubeconfig_path, kubeconfig)
 
@@ -214,7 +214,7 @@ class Kubernetes::Installer
 
     secret_manifest = Crinja.render(HETZNER_CLOUD_SECRET_MANIFEST, {
       network: (settings.existing_network || settings.cluster_name),
-      token: settings.hetzner_token
+      token:   settings.hetzner_token,
     })
 
     command = <<-BASH
@@ -237,7 +237,11 @@ class Kubernetes::Installer
   private def deploy_cloud_controller_manager
     puts "\nDeploying Hetzner Cloud Controller Manager..."
 
-    command = "kubectl apply -f #{settings.cloud_controller_manager_manifest_url}"
+    if settings.cloud_controller_manager_manifest_url
+      command = "kubectl apply -f #{settings.cloud_controller_manager_manifest_url}"
+    else
+      command = "kubectl apply -f https://github.com/hetznercloud/hcloud-cloud-controller-manager/releases/download/v1.15.0/ccm-networks.yaml"
+    end
 
     result = Util::Shell.run(command, configuration.kubeconfig_path, settings.hetzner_token)
 
@@ -297,13 +301,13 @@ class Kubernetes::Installer
     certificate_path = ssh.run(first_master, settings.ssh_port, "[ -f /etc/ssl/certs/ca-certificates.crt ] && echo 1 || echo 2", settings.use_ssh_agent, false).chomp == "1" ? "/etc/ssl/certs/ca-certificates.crt" : "/etc/ssl/certs/ca-bundle.crt"
 
     cluster_autoscaler_manifest = Crinja.render(CLUSTER_AUTOSCALER_MANIFEST, {
-      node_pool_args: node_pool_args,
-      cloud_init: Base64.strict_encode(cloud_init),
-      image: settings.autoscaling_image || settings.image,
-      firewall_name: settings.cluster_name,
-      ssh_key_name: settings.cluster_name,
-      network_name: (settings.existing_network || settings.cluster_name),
-      certificate_path: certificate_path
+      node_pool_args:   node_pool_args,
+      cloud_init:       Base64.strict_encode(cloud_init),
+      image:            settings.autoscaling_image || settings.image,
+      firewall_name:    settings.cluster_name,
+      ssh_key_name:     settings.cluster_name,
+      network_name:     (settings.existing_network || settings.cluster_name),
+      certificate_path: certificate_path,
     })
 
     cluster_autoscaler_manifest_path = "/tmp/cluster_autoscaler_manifest_path.yaml"
